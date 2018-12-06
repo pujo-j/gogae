@@ -41,7 +41,7 @@ func (g Gogae) Handle(f Handler) func(w http.ResponseWriter, r *http.Request, pa
 			Request:      r,
 			Params:       params,
 			JWTToken:     session,
-			UserDataJson: "",
+			UserDataJson: session.Session.UserData,
 			Log:          log,
 		}
 		token := session.Session.Token

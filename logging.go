@@ -10,6 +10,7 @@ import (
 var log *logrus.Logger
 
 func init() {
+	log = logrus.New()
 	appId := os.Getenv("GAE_DEPLOYMENT_ID")
 	if appId != "" {
 		// On app engine

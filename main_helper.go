@@ -7,6 +7,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+	"net/http"
 	"os"
 )
 
@@ -22,9 +23,19 @@ type Gogae struct {
 	Log    *logrus.Logger
 }
 
+func (g *Gogae) Start() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	g.Log.WithField("port", port).Info("Starting service")
+	g.Log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), g.Auth))
+}
+
 func InitGogae(config GogaeConfig, userLoadFunction func(context context.Context, config *oauth2.Config, token *oauth2.Token) (string, error)) (Gogae, error) {
 	router := httprouter.New()
 	auth := NewAuthMiddleware(router, config.AuthConfig, userLoadFunction, config.AuthConfig.Prefix)
+	auth.addPaths(router)
 	if config.CloudSQLConfig != nil {
 		var DSN string
 		if os.Getenv("GAE_DEPLOYMENT_ID") != "" {
