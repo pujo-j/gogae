@@ -25,7 +25,7 @@ type RequestContext struct {
 	redirectCode   int
 }
 
-func (r RequestContext) redirect(target string, code int) (interface{}, int, error) {
+func (r RequestContext) Redirect(target string, code int) (interface{}, int, error) {
 	r.redirectTarget = target
 	r.redirectCode = code
 	return nil, code, nil
@@ -33,10 +33,10 @@ func (r RequestContext) redirect(target string, code int) (interface{}, int, err
 
 type Handler func(context RequestContext) (interface{}, int, error)
 
-func Handle(f Handler, a *AuthMiddleware) func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func (g Gogae) Handle(f Handler) func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		var log = httpLogger(log, r)
-		session := GetSessionFromContext(r.Context())
+		session := getSessionFromContext(r.Context())
 		rc := RequestContext{
 			Request:      r,
 			Params:       params,
@@ -46,7 +46,7 @@ func Handle(f Handler, a *AuthMiddleware) func(w http.ResponseWriter, r *http.Re
 		}
 		token := session.Session.Token
 		oldExpiry := token.Expiry
-		rc.Client = a.oauthConf.Client(r.Context(), token)
+		rc.Client = g.Auth.oauthConf.Client(r.Context(), token)
 		payload, code, err := f(rc)
 		newExpiry := token.Expiry
 		if newExpiry.After(oldExpiry) {
@@ -72,9 +72,9 @@ func Handle(f Handler, a *AuthMiddleware) func(w http.ResponseWriter, r *http.Re
 			if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
 				panic(err)
 			}
-			encrypted := secretbox.Seal(nonce[:], rawSession, &nonce, &a.tokenKey)
+			encrypted := secretbox.Seal(nonce[:], rawSession, &nonce, &g.Auth.tokenKey)
 			claims.Set("ses", encrypted)
-			jwtToken, err := jws.NewJWT(jws.Claims(claims), crypto.SigningMethodHS256).Serialize(a.secretHash)
+			jwtToken, err := jws.NewJWT(jws.Claims(claims), crypto.SigningMethodHS256).Serialize(g.Auth.secretHash)
 			if err != nil {
 				log.WithError(err).Error("Creating JWT token")
 				goto AfterToken

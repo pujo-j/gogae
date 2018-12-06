@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"os"
 )
@@ -14,7 +15,14 @@ type GogaeConfig struct {
 	CloudSQLConfig *CloudSQLConfig
 }
 
-func InitGogae(config GogaeConfig, userLoadFunction func(context context.Context, config *oauth2.Config, token *oauth2.Token) (string, error)) (*httprouter.Router, *AuthMiddleware, *sql.DB, error) {
+type Gogae struct {
+	Router *httprouter.Router
+	Auth   *AuthMiddleware
+	Db     *sql.DB
+	Log    *logrus.Logger
+}
+
+func InitGogae(config GogaeConfig, userLoadFunction func(context context.Context, config *oauth2.Config, token *oauth2.Token) (string, error)) (Gogae, error) {
 	router := httprouter.New()
 	auth := NewAuthMiddleware(router, config.AuthConfig, userLoadFunction, config.AuthConfig.Prefix)
 	if config.CloudSQLConfig != nil {
@@ -27,9 +35,9 @@ func InitGogae(config GogaeConfig, userLoadFunction func(context context.Context
 		db, err := sql.Open("mysql", DSN)
 		if err != nil {
 			log.WithField("DSN", DSN).WithError(err).Fatal("Connecting to Mysql")
-			return router, auth, nil, err
+			return Gogae{Router: router, Auth: auth, Log: log}, err
 		}
-		return router, auth, db, nil
+		return Gogae{Router: router, Auth: auth, Db: db, Log: log}, nil
 	}
-	return router, auth, nil, nil
+	return Gogae{Router: router, Auth: auth, Log: log}, nil
 }

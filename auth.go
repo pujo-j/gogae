@@ -74,7 +74,7 @@ func NewAuthMiddleware(handler http.Handler, config AuthConfig, userLoadFunction
 	return r
 }
 
-func GetSessionFromContext(ctx context.Context) *DecryptedToken {
+func getSessionFromContext(ctx context.Context) *DecryptedToken {
 	v := ctx.Value(authKey)
 	if v != nil {
 		return v.(*DecryptedToken)
@@ -144,10 +144,10 @@ func (s *AuthMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *AuthMiddleware) AddPaths(router *httprouter.Router) {
-	router.GET("/auth/google/login", s.googleLogin)
-	router.GET("/auth/google/callback", s.googleCallback)
-	router.GET("/auth/google/status", s.googleStatus)
+func (s *AuthMiddleware) addPaths(router *httprouter.Router) {
+	router.GET(s.authPrefix+"/login", s.googleLogin)
+	router.GET(s.authPrefix+"/callback", s.googleCallback)
+	router.GET(s.authPrefix+"/status", s.googleStatus)
 }
 
 func (s *AuthMiddleware) googleLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
