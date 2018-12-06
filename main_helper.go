@@ -10,14 +10,13 @@ import (
 )
 
 type GogaeConfig struct {
-	AuthPrefix     string
 	AuthConfig     AuthConfig
 	CloudSQLConfig *CloudSQLConfig
 }
 
 func InitGogae(config GogaeConfig, userLoadFunction func(context context.Context, config *oauth2.Config, token *oauth2.Token) (string, error)) (*httprouter.Router, *AuthMiddleware, *sql.DB, error) {
 	router := httprouter.New()
-	auth := NewAuthMiddleware(router, config.AuthConfig, userLoadFunction, config.AuthPrefix)
+	auth := NewAuthMiddleware(router, config.AuthConfig, userLoadFunction, config.AuthConfig.Prefix)
 	if config.CloudSQLConfig != nil {
 		var DSN string
 		if os.Getenv("GAE_DEPLOYMENT_ID") != "" {

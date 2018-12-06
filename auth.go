@@ -26,6 +26,7 @@ var authKey authKeyType
 
 type AuthConfig struct {
 	Project string
+	Prefix  string
 	OAuth   struct {
 		ClientID     string
 		ClientSecret string
