@@ -146,8 +146,15 @@ func (s *AuthMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *AuthMiddleware) addPaths(router *httprouter.Router) {
 	router.GET(s.authPrefix+"/login", s.googleLogin)
+	router.GET(s.authPrefix+"/logout", s.googleLogout)
 	router.GET(s.authPrefix+"/callback", s.googleCallback)
 	router.GET(s.authPrefix+"/status", s.googleStatus)
+}
+
+func (s *AuthMiddleware) googleLogout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	http.SetCookie(w, &http.Cookie{Name: "JWTAuth", Value: "", Expires: time.Now().Add(-10 * time.Minute), Path: "/"})
+	log.Info("Logging out")
+	_, _ = w.Write([]byte("Logged out..."))
 }
 
 func (s *AuthMiddleware) googleLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -288,6 +295,7 @@ func (s *AuthMiddleware) googleCallback(w http.ResponseWriter, r *http.Request, 
 		w.WriteHeader(500)
 		return
 	}
+	http.SetCookie(w, &http.Cookie{Name: "csrftoken", Value: "", Expires: time.Now().Add(-10 * time.Minute)})
 	http.SetCookie(w, &http.Cookie{Name: "JWTAuth", Value: base64.RawStdEncoding.EncodeToString(jwtToken), Expires: token.Expiry, Path: "/"})
 	http.Redirect(w, r, "/", 302)
 	log.WithField("user.email", u.Email).Info("User login success")
